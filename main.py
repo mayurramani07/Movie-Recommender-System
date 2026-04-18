@@ -72,3 +72,33 @@ class SearchBundleResponse(BaseModel):
     movie_details: TMDBMovieDetails
     tfidf_recommendations: List[TFIDFRecItem]
     genre_recommendations: List[TMDBMovieCard]
+
+def _norm_title(t: str) -> str:
+    return str(t).strip().lower()
+
+
+def make_img_url(path: Optional[str]) -> Optional[str]:
+    if not path:
+        return None
+    return f"{TMDB_IMG_500}{path}"
+
+
+async def tmdb_get(path: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    q = dict(params)
+    q["api_key"] = TMDB_API_KEY
+
+    try:
+        async with httpx.AsyncClient(timeout=20) as client:
+            r = await client.get(f"{TMDB_BASE}{path}", params=q)
+    except httpx.RequestError as e:
+        raise HTTPException(
+            status_code=502,
+            detail=f"TMDB request error: {type(e).__name__} | {repr(e)}",
+        )
+
+    if r.status_code != 200:
+        raise HTTPException(
+            status_code=502, detail=f"TMDB error {r.status_code}: {r.text}"
+        )
+
+    return r.json()
