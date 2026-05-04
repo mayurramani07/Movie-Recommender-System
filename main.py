@@ -219,3 +219,25 @@ async def attach_tmdb_card_by_title(title: str) -> Optional[TMDBMovieCard]:
         )
     except Exception:
         return None
+
+@app.on_event("startup")
+def load_pickles():
+    global df, indices_obj, tfidf_matrix, tfidf_obj, TITLE_TO_IDX
+
+    with open(DF_PATH, "rb") as f:
+        df = pickle.load(f)
+
+    with open(INDICES_PATH, "rb") as f:
+        indices_obj = pickle.load(f)
+
+    with open(TFIDF_MATRIX_PATH, "rb") as f:
+        tfidf_matrix = pickle.load(f)
+
+    with open(TFIDF_PATH, "rb") as f:
+        tfidf_obj = pickle.load(f)
+
+    TITLE_TO_IDX = build_title_to_idx_map(indices_obj)
+
+    if df is None or "title" not in df.columns:
+        raise RuntimeError("df.pkl must contain a DataFrame with a 'title' column")
+    
